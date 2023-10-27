@@ -16,6 +16,8 @@ Rules, from Wikipedia:
 
 You can download the `.tic` file and load it up in TIC-80 to view the code/edit the game.
 
+Please excuse the code indentation/formatting; it looks better in the TIC-80 editor.
+
 ```lua
 -- title:  Conway's Game of Life
 -- author: Aleksandr Hovhannisyan
@@ -48,8 +50,8 @@ function BOOT()
 	}
 	-- Map cell states to colors
 	CellColor={
-		[CellState.ALIVE]   =Color.BLACK,
-		[CellState.DEAD]    =Color.WHITE,
+		[CellState.ALIVE] =Color.BLACK,
+		[CellState.DEAD]  =Color.WHITE,
 	}
 	-- Track cell state for every pixel
 	-- in a 1D array (which we'll interpret

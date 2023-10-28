@@ -16,7 +16,6 @@ Rules, from Wikipedia:
 
 You can download the `.tic` file and load it up in TIC-80 to view the code/edit the game.
 
-Please excuse the code indentation/formatting; it looks better in the TIC-80 editor.
 
 ```lua
 -- title:  Conway's Game of Life
@@ -26,23 +25,23 @@ Please excuse the code indentation/formatting; it looks better in the TIC-80 edi
 
 function BOOT()
 	-- The TIC() function runs at 60 FPS
-	TIC_FPS=60
+	FPS_TIC=60
 	-- Change this to run the game slower
-	DESIRED_FPS=60
-	-- Frame/generation counter, increments at TIC_FPS
-	generation=0
-	-- Likelihood of a cell spawning alive in gen 0
-	ALIVE_SPAWN_CHANCE=0.1
- -- Screen dimensions (engine constants)
+	FPS_DESIRED=60
+    -- Screen dimensions (engine constants)
 	Screen={
 		WIDTH	=240,
-		HEIGHT	=136,
+		HEIGHT  =136,
 	}
 	-- Color palette
 	Color={
 		BLACK=0,
 		WHITE=12,
 	}
+	-- Frame/generation counter, increments at TIC_FPS
+	generation=0
+	-- Likelihood of a cell spawning alive in gen 0
+	ALIVE_SPAWN_CHANCE=0.1
 	-- Possible cell states
 	CellState={
 		DEAD	=false,
@@ -50,16 +49,22 @@ function BOOT()
 	}
 	-- Map cell states to colors
 	CellColor={
-		[CellState.ALIVE] =Color.BLACK,
-		[CellState.DEAD]  =Color.WHITE,
+		[CellState.ALIVE]   =Color.BLACK,
+		[CellState.DEAD]    =Color.WHITE,
+	}
+	-- Game rules
+	Threshold={
+		OVERPOPULATION=3,
+		UNDERPOPULATION=2,
+		REPRODUCTION=3,
 	}
 	-- Track cell state for every pixel
 	-- in a 1D array (which we'll interpret
 	-- as a 2D screen when drawing).
 	oldCells={}
 	for index=0,Screen.WIDTH*Screen.HEIGHT do
-		diceRoll=math.random()
-		state=CellState.DEAD
+		local diceRoll=math.random()
+		local state=CellState.DEAD
 		if diceRoll<=ALIVE_SPAWN_CHANCE then
 			state=CellState.ALIVE
 		end
@@ -86,7 +91,7 @@ function GetNumAliveNeighbors(cells,index)
 	local numAliveNeighbors=0
 	-- row 0:  		 0			1 		2 		3 ... 238 239
 	-- row 1: 		240 241 242 243 ... 478 479
-	neighbors={
+	local neighbors={
 		-- No need to check that these indices are in bounds since
 		-- tables in Lua can have any index, so if the index is out of
 		-- bounds, then the value we'll look at will just be nil
@@ -107,39 +112,40 @@ function GetNumAliveNeighbors(cells,index)
 	return numAliveNeighbors
 end
 
--- This gives us the next generation of cells
-function UpdateCells()
+-- Game update loop. Implements game rules
+-- and draws cells on the display.
+function Update()
 	for index,state in pairs(oldCells) do
-		numAliveNeighbors=GetNumAliveNeighbors(oldCells,index)
+		local numAliveNeighbors=GetNumAliveNeighbors(oldCells,index)
 		local newState=state
 		-- Currently alive
 		if state==CellState.ALIVE then
-			if numAliveNeighbors<2 or numAliveNeighbors>3 then
+			if numAliveNeighbors<Threshold.UNDERPOPULATION or 
+               numAliveNeighbors>Threshold.OVERPOPULATION
+			then
 				newState=CellState.DEAD
 			end
 		-- Currently dead
 		else
-			if numAliveNeighbors==3 then
+			if numAliveNeighbors==Threshold.REPRODUCTION then
 				newState=CellState.ALIVE
 			end
 		end
 		newCells[index]=newState
+		DrawCell(index,newState)
 	end
 	-- This "new" generation will be the next
 	-- generation's old generation, so copy it now
 	CopyTable(newCells,oldCells)
 end
 
-function DrawCells()
-	for index,state in pairs(newCells) do
-		poke(0x00000+index,CellColor[state],4)
-	end
+function DrawCell(index,state)
+	poke(0x00000+index,CellColor[state],4)
 end
 
 function TIC()
-	if generation%(TIC_FPS/DESIRED_FPS)==0 then
-		DrawCells()
-		UpdateCells()
+	if generation%(FPS_TIC/FPS_DESIRED)==0 then
+		Update()
 	end
 	generation=generation+1
 end
